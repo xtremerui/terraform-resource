@@ -43,6 +43,7 @@ func (m Model) Validate() error {
 	knownDrivers := []string{
 		"",
 		S3Driver,
+		GCSDriver,
 	}
 	isUnknownDriver := true
 	for _, driver := range knownDrivers {
@@ -76,6 +77,19 @@ func (m Model) Validate() error {
 		}
 		if m.SecretAccessKey == "" {
 			missingFields = append(missingFields, fmt.Sprintf("%s.secret_access_key", fieldPrefix))
+		}
+	}
+
+	if m.Driver == "" || m.Driver == GCSDriver {
+		fieldPrefix := "storage"
+		if m.Bucket == "" {
+			missingFields = append(missingFields, fmt.Sprintf("%s.bucket", fieldPrefix))
+		}
+		if m.BucketPath == "" {
+			missingFields = append(missingFields, fmt.Sprintf("%s.bucket_path", fieldPrefix))
+		}
+		if m.ServiceAccountKey == "" {
+			missingFields = append(missingFields, fmt.Sprintf("%s.service_account_key", fieldPrefix))
 		}
 	}
 

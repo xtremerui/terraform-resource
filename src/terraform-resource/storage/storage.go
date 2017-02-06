@@ -28,6 +28,8 @@ func BuildDriver(m Model) Storage {
 	switch driverType {
 	case S3Driver:
 		storageDriver = NewS3(m)
+	case GCSDriver:
+		storageDriver = NewGCS(m)
 	default:
 		// calling model.Validate will throw error for this case
 		return null{}
