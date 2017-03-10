@@ -1,6 +1,9 @@
 package storage_test
 
 import (
+	"fmt"
+	"io/ioutil"
+	"os"
 	"terraform-resource/storage"
 
 	. "github.com/onsi/ginkgo"
@@ -15,7 +18,7 @@ var _ = Describe("GCS Storage Models", func() {
 
 			It("returns nil if all fields are provided", func() {
 				model := storage.Model{
-					Driver:            storage.gcs,
+					Driver:            storage.GCSDriver,
 					Bucket:            "fake-bucket",
 					BucketPath:        "fake-bucket-path",
 					ServiceAccountKey: "fake-service-account-key",
@@ -25,6 +28,41 @@ var _ = Describe("GCS Storage Models", func() {
 
 				err := model.Validate()
 				Expect(err).ToNot(HaveOccurred())
+			})
+
+			It("returns error if storage fields are missing", func() {
+				requiredFields := []string{
+					"storage.bucket",
+					"storage.bucket_path",
+					"storage.service_account_key",
+				}
+
+				file, e := ioutil.ReadFile("cf-sandbox-ryang.json")
+				if e != nil {
+					fmt.Printf("File error: %v\n", e)
+					os.Exit(1)
+				}
+
+				serviceAccountKey := string(file)
+				fmt.Printf("service account key: %s\n", serviceAccountKey)
+
+				model := storage.Model{
+					Driver:            storage.GCSDriver,
+					Bucket:            "terraform-resource-test",
+					BucketPath:        "",
+					ServiceAccountKey: serviceAccountKey,
+				}
+				storageDriver := storage.BuildDriver(model)
+
+				storageDriver.Download("android-sdk-version", os.Stdout)
+
+				fmt.Print(os.Stdout)
+
+				err := model.Validate()
+				Expect(err).To(HaveOccurred())
+				for _, field := range requiredFields {
+					Expect(err.Error()).To(ContainSubstring(field))
+				}
 			})
 
 			// It("returns error if storage fields are missing", func() {

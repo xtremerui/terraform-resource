@@ -8,29 +8,30 @@ import (
 	"log"
 	"os"
 	"path"
+	"time"
 
 	"cloud.google.com/go/storage"
-	gcpgcs "cloud.google.com/go/storage"
 )
 
 type gcs struct {
-	client *gcpgcs.Client
+	client *storage.Client
 	model  Model
 }
 
 const (
 	defaultGCSRegion = "us-east1"
 	keyPath          = "/tmp/key.json"
-	ctx              = context.Background()
 )
+
+var ctx = context.Background()
 
 func NewGCS(m Model) Storage {
 
-	key := m.ServiceAccountKey
-	err := ioutil.WriteFile(keyPath, []byte(key), 0644)
-	if err != nil {
-		log.Fatalf("Failed to create google service account key file: %v", err)
-	}
+	// key := m.ServiceAccountKey
+	// err := ioutil.WriteFile(keyPath, []byte(key), 0644)
+	// if err != nil {
+	// 	log.Fatalf("Failed to create google service account key file: %v", err)
+	// }
 
 	os.Setenv("GOOGLE_APPLICATION_CREDENTIALS", keyPath)
 
@@ -53,24 +54,42 @@ func (g *gcs) Download(filename string, destination io.Writer) (Version, error) 
 
 	key := path.Join(g.model.BucketPath, filename)
 
-	objHandle := client.Bucket(g.model.Bucket).Object(key)
+	objHandle := g.client.Bucket(g.model.Bucket).Object(key)
 	r, err := objHandle.NewReader(ctx)
-	util.FatalIfError(err)
+	if err != nil {
+		log.Fatal(err)
+	}
 	data, err := ioutil.ReadAll(r)
-	util.FatalIfError(err)
+	if err != nil {
+		log.Fatal(err)
+	}
 	err = r.Close()
-	util.FatalIfError(err)
+	if err != nil {
+		log.Fatal(err)
+	}
 	attrs, err := objHandle.Attrs(ctx)
-	util.FatalIfError(err)
+	if err != nil {
+		log.Fatal(err)
+	}
 	sha1Hex := attrs.Metadata["SHA1"]
-	fmt.Printf("Read '%s' of size %d, sha1: %s\n", path, len(data), sha1Hex)
+	fmt.Printf("Read '%s' of size %d, sha1: %s\n", keyPath, len(data), sha1Hex)
+	if _, err := io.Copy(destination, r); err != nil {
+		// TODO: Handle error.
+	}
+
+	objAttrs, err := objHandle.Attrs(ctx)
+	if err != nil {
+		// TODO: Handle error.
+	}
+	fmt.Printf("object %s has size %d and is last updated at %s\n",
+		objAttrs.Name, objAttrs.Size, objAttrs.Updated)
 
 	version := Version{
-		LastModified: data,
+		LastModified: time.Now(),
 		StateFile:    filename,
 	}
 
-	return Version, nil
+	return version, nil
 }
 
 func (g *gcs) Upload(filename string, content io.Reader) (Version, error) {

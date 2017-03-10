@@ -1,21 +1,21 @@
 # uncomment time resource to trigger nightly builds
 # uncomment terraform-src trigger to build rc builds
 # uncomment slack tasks to trigger alerts on success / failure
-shared:
-  - &failure-alert
-    put: slack-alert
-    params:
-      silent: true
-      icon_emoji: ":interrobang:"
-      text: |
-        *The <$ATC_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|$BUILD_JOB_NAME> job failed!*
-  - &success-alert
-    put: slack-alert
-    params:
-      silent: true
-      icon_emoji: ":rocket:"
-      text: |
-        *The <$ATC_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|$BUILD_JOB_NAME> job passed!*
+# shared:
+#   - &failure-alert
+#     put: slack-alert
+#     params:
+#       silent: true
+#       icon_emoji: ":interrobang:"
+#       text: |
+#         *The <$ATC_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|$BUILD_JOB_NAME> job failed!*
+#   - &success-alert
+#     put: slack-alert
+#     params:
+#       silent: true
+#       icon_emoji: ":rocket:"
+#       text: |
+#         *The <$ATC_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|$BUILD_JOB_NAME> job passed!*
 
 jobs:
   - name: push-custom-image
