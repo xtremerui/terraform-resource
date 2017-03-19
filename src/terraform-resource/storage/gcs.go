@@ -8,7 +8,6 @@ import (
 	"log"
 	"os"
 	"path"
-	"time"
 
 	"cloud.google.com/go/storage"
 )
@@ -27,11 +26,11 @@ var ctx = context.Background()
 
 func NewGCS(m Model) Storage {
 
-	// key := m.ServiceAccountKey
-	// err := ioutil.WriteFile(keyPath, []byte(key), 0644)
-	// if err != nil {
-	// 	log.Fatalf("Failed to create google service account key file: %v", err)
-	// }
+	key := m.ServiceAccountKey
+	err := ioutil.WriteFile(keyPath, []byte(key), 0644)
+	if err != nil {
+		log.Fatalf("Failed to create google service account key file: %v", err)
+	}
 
 	os.Setenv("GOOGLE_APPLICATION_CREDENTIALS", keyPath)
 
@@ -57,35 +56,23 @@ func (g *gcs) Download(filename string, destination io.Writer) (Version, error) 
 	objHandle := g.client.Bucket(g.model.Bucket).Object(key)
 	r, err := objHandle.NewReader(ctx)
 	if err != nil {
-		log.Fatal(err)
+		return Version{}, fmt.Errorf("GetObject request failed.\nError: %s", err.Error())
 	}
-	data, err := ioutil.ReadAll(r)
+
+	_, err = io.Copy(destination, r)
 	if err != nil {
-		log.Fatal(err)
+		return Version{}, fmt.Errorf("Failed to copy download to local file: %s", err)
 	}
-	err = r.Close()
-	if err != nil {
-		log.Fatal(err)
-	}
-	attrs, err := objHandle.Attrs(ctx)
-	if err != nil {
-		log.Fatal(err)
-	}
-	sha1Hex := attrs.Metadata["SHA1"]
-	fmt.Printf("Read '%s' of size %d, sha1: %s\n", keyPath, len(data), sha1Hex)
-	if _, err := io.Copy(destination, r); err != nil {
-		// TODO: Handle error.
-	}
+
+	defer r.Close()
 
 	objAttrs, err := objHandle.Attrs(ctx)
 	if err != nil {
-		// TODO: Handle error.
+		return Version{}, fmt.Errorf("GetObject attributes failed.\nError: %s", err.Error())
 	}
-	fmt.Printf("object %s has size %d and is last updated at %s\n",
-		objAttrs.Name, objAttrs.Size, objAttrs.Updated)
 
 	version := Version{
-		LastModified: time.Now(),
+		LastModified: objAttrs.Updated,
 		StateFile:    filename,
 	}
 

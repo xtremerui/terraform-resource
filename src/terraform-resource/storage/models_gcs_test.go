@@ -56,8 +56,6 @@ var _ = Describe("GCS Storage Models", func() {
 
 				storageDriver.Download("android-sdk-version", os.Stdout)
 
-				fmt.Print(os.Stdout)
-
 				err := model.Validate()
 				Expect(err).To(HaveOccurred())
 				for _, field := range requiredFields {
